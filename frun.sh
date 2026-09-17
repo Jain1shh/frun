@@ -32,7 +32,7 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 
 readonly SCRIPT_NAME="$(basename "${0}")"
-readonly VERSION="1.0.1"
+readonly VERSION="1.0.2"
 readonly REPO_RAW_URL="https://raw.githubusercontent.com/Jain1shh/frun/main/frun.sh"
 
 # Resolve the absolute path to this script so it can safely re-invoke itself
@@ -324,6 +324,38 @@ validate_target_dir() {
 # Preview renderer (invoked recursively by fzf, once per highlighted entry)
 # -----------------------------------------------------------------------------
 
+# Renders a metadata summary for files that can't be shown as text (PDFs,
+# images, archives, executables, media, etc.) instead of dumping raw bytes
+# or relying on a preview tool's binary-refusal message.
+render_metadata() {
+  local target="$1"
+  local mime="$2"
+
+  printf '\033[1;33mPreview not available for this file type\033[0m\n\n'
+  printf '\033[1mName:\033[0m       %s\n' "$(basename "${target}")"
+  printf '\033[1mType:\033[0m       %s\n' "$(file -b "${target}" 2>/dev/null)"
+  printf '\033[1mMIME type:\033[0m  %s\n' "${mime:-unknown}"
+  printf '\033[1mSize:\033[0m       %s\n' "$(du -h "${target}" 2>/dev/null | cut -f1)"
+
+  local mtime
+  mtime="$(stat -c '%y' "${target}" 2>/dev/null | cut -d'.' -f1)"
+  [[ -n "${mtime}" ]] && printf '\033[1mModified:\033[0m   %s\n' "${mtime}"
+
+  # Nice-to-have: page count for PDFs, when poppler-utils is installed.
+  if [[ "${mime}" == "application/pdf" ]] && command -v pdfinfo >/dev/null 2>&1; then
+    local pages
+    pages="$(pdfinfo "${target}" 2>/dev/null | awk -F': *' '/^Pages/ {print $2}')"
+    [[ -n "${pages}" ]] && printf '\033[1mPages:\033[0m      %s\n' "${pages}"
+  fi
+
+  # Nice-to-have: pixel dimensions for images, parsed from `file`'s own output.
+  if [[ "${mime}" == image/* ]]; then
+    local dims
+    dims="$(file -b "${target}" 2>/dev/null | grep -oE '[0-9]+ ?x ?[0-9]+' | head -n1)"
+    [[ -n "${dims}" ]] && printf '\033[1mDimensions:\033[0m %s\n' "${dims}"
+  fi
+}
+
 render_preview() {
   local rel="$1"
   local target="${FRUN_TARGET_DIR:-.}/${rel}"
@@ -341,17 +373,25 @@ render_preview() {
   fi
 
   if [[ -f "${target}" ]]; then
-    if command -v batcat >/dev/null 2>&1; then
-      batcat --style=numbers --color=always --paging=never --line-range=:200 "${target}" 2>/dev/null && return 0
-    fi
+    local mime
+    mime="$(file --mime-type -b "${target}" 2>/dev/null)"
 
-    if file --mime "${target}" 2>/dev/null | grep -qE 'text/|charset=us-ascii|charset=utf-8'; then
-      head -n 200 "${target}" 2>/dev/null
-    else
-      printf '\033[1;33mBinary or non-text file:\033[0m %s\n\n' "${target}"
-      file "${target}" 2>/dev/null || true
-      printf '\n\033[2mSize:\033[0m %s\n' "$(du -h "${target}" 2>/dev/null | cut -f1)"
-    fi
+    # Classify by MIME type BEFORE calling bat: bat exits 0 even when it
+    # refuses to print binary content (it just prints a warning to stderr
+    # instead), so we can't rely on its exit code to decide whether the
+    # preview actually rendered anything useful.
+    case "${mime}" in
+      text/*|application/json|application/xml|application/javascript|application/x-sh|application/x-shellscript|application/x-yaml|application/toml|application/x-perl|application/x-python|inode/x-empty)
+        if command -v batcat >/dev/null 2>&1; then
+          batcat --style=numbers --color=always --paging=never --line-range=:200 "${target}" 2>/dev/null
+        else
+          head -n 200 "${target}" 2>/dev/null
+        fi
+        return 0
+        ;;
+    esac
+
+    render_metadata "${target}" "${mime}"
     return 0
   fi
 
