@@ -324,3 +324,9 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 ```
+
+---
+
+## Contact
+
+GitHub: [@Jain1shh](https://github.com/Jain1shh)
