@@ -239,6 +239,7 @@ OPTIONS:
   -n, --exclude-name NAME     Exclude an exact filename (repeatable)
   -d, --exclude-dir NAME      Exclude a directory by name (repeatable)
   -v, --version                Print version and exit
+  -u, --update                 Check for a newer release and self-update in place.
   -h, --help                   Show help and exit
 ```
 
