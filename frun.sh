@@ -32,7 +32,7 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 
 readonly SCRIPT_NAME="$(basename "${0}")"
-readonly VERSION="1.0.0"
+readonly VERSION="1.0.1"
 readonly REPO_RAW_URL="https://raw.githubusercontent.com/Jain1shh/frun/main/frun.sh"
 
 # Resolve the absolute path to this script so it can safely re-invoke itself
@@ -341,8 +341,8 @@ render_preview() {
   fi
 
   if [[ -f "${target}" ]]; then
-    if command -v bat >/dev/null 2>&1; then
-      bat --style=numbers --color=always --paging=never --line-range=:200 "${target}" 2>/dev/null && return 0
+    if command -v batcat >/dev/null 2>&1; then
+      batcat --style=numbers --color=always --paging=never --line-range=:200 "${target}" 2>/dev/null && return 0
     fi
 
     if file --mime "${target}" 2>/dev/null | grep -qE 'text/|charset=us-ascii|charset=utf-8'; then
