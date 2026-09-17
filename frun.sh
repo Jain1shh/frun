@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# frun — A fast, fuzzy, cross-distro file launcher inspired by KDE's KRunner.
+# frun — A fast, fuzzy, cross-distro CLI file launcher.
 # Built on top of fzf + fd, with safe previews and asynchronous xdg-open launching.
 #
-# Repository: https://github.com/<your-username>/frun
+# Repository: https://github.com/Jain1shh/frun
 #
 # Copyright (C) 2026  Jainish
 #
@@ -33,6 +33,7 @@ set -o pipefail
 
 readonly SCRIPT_NAME="$(basename "${0}")"
 readonly VERSION="1.0.0"
+readonly REPO_RAW_URL="https://raw.githubusercontent.com/Jain1shh/frun/main/frun.sh"
 
 # Resolve the absolute path to this script so it can safely re-invoke itself
 # for preview rendering, regardless of how or from where it was called
@@ -77,7 +78,7 @@ die()  { err "$*"; exit 1; }
 usage() {
   cat <<EOF
 ${SCRIPT_NAME} v${VERSION}
-A KRunner-inspired fuzzy file launcher for the terminal, built on fzf + fd.
+A fast, fuzzy CLI file launcher for the terminal, built on fzf + fd.
 Licensed under the GNU General Public License v3.0.
 
 USAGE:
@@ -98,6 +99,7 @@ OPTIONS:
                               tree (repeatable).
                               Example: -d node_modules -d .git -d .venv
   -v, --version                Print version information and exit.
+  -u, --update                 Check for a newer release and self-update in place.
   -h, --help                   Show this help message and exit.
 
 EXAMPLES:
@@ -124,6 +126,97 @@ DEPENDENCIES:
   xdg-open     part of the xdg-utils package
 
 EOF
+}
+
+# -----------------------------------------------------------------------------
+# Self-update
+# -----------------------------------------------------------------------------
+
+# Compares two "MAJOR.MINOR.PATCH" version strings.
+# Echoes: 0 if equal, 1 if $1 > $2, 2 if $1 < $2.
+_version_compare() {
+  local v1="$1" v2="$2"
+  if [[ "${v1}" == "${v2}" ]]; then
+    echo 0
+    return
+  fi
+  local higher
+  higher="$(printf '%s\n%s\n' "${v1}" "${v2}" | sort -V | tail -n1)"
+  if [[ "${higher}" == "${v1}" ]]; then
+    echo 1
+  else
+    echo 2
+  fi
+}
+
+self_update() {
+  command -v curl >/dev/null 2>&1 \
+    || die "'curl' is required to check for updates. Install it and try again."
+
+  info "Current version: ${VERSION}"
+  info "Checking ${REPO_RAW_URL} for a newer release ..."
+
+  local tmp_file
+  tmp_file="$(mktemp)"
+  # Ensure the temp file is cleaned up no matter how this function exits.
+  trap 'rm -f "${tmp_file}"' RETURN
+
+  if ! curl -fsSL "${REPO_RAW_URL}" -o "${tmp_file}"; then
+    die "Failed to download the latest version. Check your network connection."
+  fi
+
+  if [[ ! -s "${tmp_file}" ]]; then
+    die "Downloaded update file is empty — aborting to avoid a broken install."
+  fi
+
+  # Sanity-check that we actually downloaded a frun script, not an error page
+  # or an empty/HTML redirect body.
+  if ! grep -q '^readonly SCRIPT_NAME=' "${tmp_file}"; then
+    die "Downloaded file does not look like a valid frun script — aborting."
+  fi
+
+  local remote_version
+  remote_version="$(grep -m1 '^readonly VERSION=' "${tmp_file}" | sed -E 's/^readonly VERSION="([^"]+)"/\1/')"
+
+  if [[ -z "${remote_version}" ]]; then
+    die "Could not determine the remote version — aborting."
+  fi
+
+  local cmp
+  cmp="$(_version_compare "${remote_version}" "${VERSION}")"
+
+  if [[ "${cmp}" -eq 0 ]]; then
+    info "You're already running the latest version (${VERSION})."
+    exit 0
+  fi
+
+  if [[ "${cmp}" -eq 2 ]]; then
+    warn "Local version (${VERSION}) is newer than the latest published release (${remote_version})."
+    warn "No changes made. This can happen if you're on a development build."
+    exit 0
+  fi
+
+  info "New version available: ${remote_version} (current: ${VERSION})"
+
+  # Determine whether we need elevated permissions to overwrite the
+  # currently-installed script in place.
+  local install_target="${SCRIPT_PATH}"
+  local install_dir
+  install_dir="$(dirname "${install_target}")"
+
+  local sudo_cmd=""
+  if [[ ! -w "${install_dir}" ]]; then
+    command -v sudo >/dev/null 2>&1 || die "Write permission needed for ${install_dir}, and 'sudo' is not available."
+    sudo_cmd="sudo"
+  fi
+
+  info "Installing update to ${install_target} (may prompt for your password) ..."
+  ${sudo_cmd} install -m 755 "${tmp_file}" "${install_target}" \
+    || die "Failed to write the update to ${install_target}."
+
+  info "Updated successfully: ${VERSION} → ${remote_version}"
+  info "Run '${SCRIPT_NAME} --version' to confirm."
+  exit 0
 }
 
 # -----------------------------------------------------------------------------
@@ -180,6 +273,9 @@ parse_args() {
       -v|--version)
         printf '%s v%s\n' "${SCRIPT_NAME}" "${VERSION}"
         exit 0
+        ;;
+      -u|--update)
+        self_update
         ;;
       -h|--help)
         usage

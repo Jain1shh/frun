@@ -16,7 +16,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly REPO_RAW_URL="https://raw.githubusercontent.com/<your-username>/frun/main/frun.sh"
+readonly REPO_RAW_URL="https://raw.githubusercontent.com/Jain1shh/frun/main/frun.sh"
 readonly INSTALL_DIR="${FRUN_INSTALL_DIR:-/usr/local/bin}"
 readonly BIN_NAME="frun"
 readonly SCRIPT_SOURCE="frun.sh"

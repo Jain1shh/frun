@@ -1,6 +1,6 @@
 # ⚡ frun
 
-**A KRunner-inspired fuzzy file launcher for your terminal.**
+**A fast, fuzzy CLI file launcher for the terminal.**
 Instantly search, preview, and open any file or folder — powered by [`fzf`](https://github.com/junegunn/fzf) and [`fd`](https://github.com/sharkdp/fd), and portable across every major Linux distro.
 
 ![shell: bash](https://img.shields.io/badge/shell-bash-4EAA25?logo=gnubash&logoColor=white)
@@ -33,7 +33,7 @@ Instantly search, preview, and open any file or folder — powered by [`fzf`](ht
 - **Zero-lag launching** — press Enter and your file opens in its default app via `xdg-open`, fired off asynchronously so your terminal is never blocked or flooded with output.
 - **True cross-distro portability** — auto-detects `fd` vs. `fdfind` so the same script runs unmodified on Arch, Fedora, Ubuntu, Debian, Mint, and derivatives.
 - **Single self-contained script** — no runtime dependencies beyond standard `bash` and the three tools listed below.
-- **Free and open source**, licensed under the **GNU General Public License v3.0** — the same copyleft license used by the Linux kernel, GNOME, and most of the GNU toolchain.
+- **Free and open source**, licensed under the **GNU General Public License v3.0**.
 
 ---
 
@@ -72,7 +72,7 @@ sudo apt install fzf fd-find xdg-utils
 Clone the repository:
 
 ```bash
-git clone https://github.com/<your-username>/frun.git
+git clone https://github.com/Jain1shh/frun.git
 cd frun
 ```
 
@@ -117,10 +117,8 @@ frun ~/Documents
 
 ### Alternative — one-line remote install
 
-Once you've pushed this repo to GitHub, anyone can install `frun` without cloning first:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<your-username>/frun/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jain1shh/frun/main/install.sh | bash
 ```
 
 This downloads `frun.sh` directly and runs the same install steps as above.
@@ -130,7 +128,7 @@ This downloads `frun.sh` directly and runs the same install steps as above.
 If you'd rather skip `install.sh` entirely:
 
 ```bash
-git clone https://github.com/<your-username>/frun.git
+git clone https://github.com/Jain1shh/frun.git
 cd frun
 chmod +x frun.sh
 sudo install -m 755 frun.sh /usr/local/bin/frun
@@ -168,6 +166,31 @@ Launch the picker rooted at the current directory.
 frun ~/Projects
 ```
 Search only inside `~/Projects`.
+
+### Directory Aliases
+
+If you frequently search inside a particular directory, you can create a shell alias for it.
+
+```bash
+alias frunproj='frun ~/Projects'
+alias frundoc='frun ~/Documents'
+```
+
+Now you can simply run:
+
+```bash
+frunproj
+```
+
+to search inside `~/Projects`, or:
+
+```bash
+frundoc
+```
+
+to search inside `~/Documents`.
+
+This is useful for directories you search frequently, so you don't have to type the full path every time.
 
 ### Include hidden files
 
@@ -271,13 +294,13 @@ sudo rm /usr/local/bin/frun
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. Please keep changes POSIX-friendly where possible and test against both `fd` and `fdfind` naming before submitting. By contributing, you agree that your contributions will be licensed under the GPLv3, matching the rest of the project.
+Issues and pull requests are welcome at [github.com/Jain1shh/frun](https://github.com/Jain1shh/frun). Please keep changes POSIX-friendly where possible and test against both `fd` and `fdfind` naming before submitting. By contributing, you agree that your contributions will be licensed under the GPLv3, matching the rest of the project.
 
 ---
 
 ## 📄 License
 
-`frun` is free software, licensed under the **GNU General Public License v3.0 (GPLv3)** — the same license family used by the Linux kernel, Bash, GCC, and most of the GNU/Linux ecosystem.
+`frun` is free software, licensed under the **GNU General Public License v3.0 (GPLv3)**.
 
 This means you're free to use, study, modify, and redistribute `frun`, provided that:
 - any distributed modified versions are also licensed under the GPLv3,
@@ -287,7 +310,7 @@ This means you're free to use, study, modify, and redistribute `frun`, provided 
 See the [`LICENSE`](LICENSE) file for the full legal text.
 
 ```
-frun - A KRunner-inspired fuzzy file launcher for the terminal.
+frun - A fast, fuzzy, cross-distro CLI file launcher.
 Copyright (C) 2026  Jainish
 
 This program is free software: you can redistribute it and/or modify
